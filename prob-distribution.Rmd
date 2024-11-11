@@ -1,0 +1,351 @@
+---
+title: "Working with Probability Distributions in R"
+author: "FIONA HOANG"
+output: pdf_document
+date: "2023-11-13"
+---
+
+```{r, include=FALSE}
+install.packages("EnvStats", repos = "http://cran.us.r-project.org") 
+```
+
+1. Below, we will use built-in R functions for common probability distributions to find each of the following values.
+
+If a random variable $Y$ follows a *beta distribution* with shape parameters $\alpha\ = 5$ and $\beta\ = 3$, the median is the 0.5 quantile, therefore we use qbeta to find it.
+
+
+```{r}
+qbeta(0.5, 5, 3)
+```
+Now, we simulate one observation from a *binomial distribution* with parameters $20$ and $0.7$.
+
+```{r}
+set.seed(1005844909)
+
+# to simulate one single observation we use 
+# rbinom(number of observations (1), number of trials (20), prob of success(0,7))
+rbinom(1, 20, 0.7)
+
+```
+
+We compute $P\left(60\ < Y<75\right)$ if a random variable $Y$ follows a *normal distribution* with a mean $70$ and variance $64$.
+
+```{r}
+# Y~N(70, 8^2)
+# Need to find: P(60<Y<75)
+# p(60<Y<75) = p(Y<75) - p(Y<60) = pnorm(75, 70, 8) - pnorm(60, 70, 8)
+# we can use pnorm which gives less than or equal to because for a continuous
+# variable, the equal to part is negligible
+
+pnorm(75, 70, 8) - pnorm(60, 70, 8)
+```
+Let $Y$ follow a  *gamma distribution* with the shape and rate parameter $8$ and $0.4$ respectively. We find the $60^{th}$ percentile of $Y$.
+
+```{r}
+# Y~Gam(8, 0.4). Need to find 0.6 quantile of Y, given by qgamma(0.6, 8, 0.4)
+
+qgamma(0.6, shape=8, rate=0.4)
+
+
+```
+
+Suppose a box contains 6 blue and 8 red marbles. If a child chooses three marbles together without looking, let's find the probability the selected marbles contain at least two blue marbles.
+
+```{r}
+
+# Let X be the number of selected marbles that are blue. Then X follows the
+# Hypergeometric distribution as we are randomly sampling n=3 marbles without 
+# replacement from a set of N=14 marbles (finite and fixed). We can categorize
+# blue marbles as success and red marbles as failure; and we know there are M=6
+# successes among the N=14 marbles, and N-M=8 failures. 
+
+# We need to find P(X>=2) = 1 - P(X<=1) = 1 - phyper(1, 6, 8, 3)
+1 - phyper(1, 6, 8, 3)
+```
+
+If a random variable $Y$ follows a Pareto distribution with the $\alpha=5$ and $\beta=2$ respectively, we calculate $P\left(Y<6\right)$. 
+
+```{r}
+library(EnvStats)
+# P(Y<6) is given by ppareto(6, location=beta=2, shape=alpha=5)
+
+ppareto(6, 2, 5)
+
+```
+If a random variable $Y$ follows a Poisson distribution with mean $8$, let's find the largest integer $y_0$ such that $P\left(Y\geq y_0\right)> 0.3$.
+
+```{r}
+
+# Y~Pois(8)
+# P(Y>=y0) = 1 - P(Y<=y0-1)
+# we need to find the largest integer y0 such that 1 - P(Y<=y0-1) < 0.3
+# 1 - 0.3 < P(Y<=y0-1) or P(Y<=y0-1) > 0.7  
+# qpois(p, lambda) gives x such that P(X<=x) >= p, or
+# qpois(0.7, 8) gives y0-1 such that P(Y<=y0-1) >= 0.7
+
+qpois(0.7, 8) + 1
+```
+
+
+
+2. 
+
+Consider the continuous random variable $Y$ with a pdf given by
+$f_Y\left(y\right)\ =\ \frac{\exp{\left(-y\right)}}{\left(1\ +\ \exp{\left(-y\right)}\right)^2}$ for $-\infty < y < \infty$. $Y$ is said to have a *standard logistic distribution*.  
+	
+First, let's derive the cumulative distribution function (cdf) for the random variable $Y$.\
+$\textcolor{blue}{ANSWER:}$
+
+The CDF is found by integrating the PDF.
+
+$F_Y(y) = \int_{-\infty}^{\infty} \frac{e^{-y}}{(1+e^{-y})^2} dy$.
+Let $u = 1 + e^{-y}$. Then $du = -e^{-y}dy$.
+
+Then, rewriting the integral in terms of u and du:
+$\int \frac{e^{-y}}{(1+e^{-y})^2}dy = -\int \frac{1}{u^2}du$. 
+
+Now, integrate with respect to u:
+$\int \frac{1}{u^2}du = \frac{1}{u}$.
+
+Finally, substituting back $u = 1 + e^{-y}$, we get:
+
+$F_Y(y) = \frac{1}{1 + e^{-y}}$
+
+
+Y is a continuous random variable with standard logistic distribution and 
+CDF $F$, where F is invertible with inverse function $F^{-1}$. Let 
+$U$~$Unif(0, 1)$. Then the distribution of $F^{-1}(U)$ is equal to the 
+distribution of Y. This means that Y can be simulated as $F^{-1}(u)$ where $u$ 
+is a simulated value from the $Unif(0, 1)$ distribution. 
+
+Since we already have the CDF of $Y$, we  need to determine $F^{-1}$. 
+Then, we take a sample from the uniform distribution from U(0, 1) with 
+n = 1 (one observation) and u = runif(n, min=0, max=1). We input u into $F^{-1}$, yielding 
+$F^{-1}(u)$. 
+
+$F = \frac{e^{-x}}{(1+e^{-x})^2}$. 
+Thus, to find $F^{-1}$, we swap x and y and solve for y. 
+
+$y = \frac{e^{-x}}{(1+e^{-x})^2} \rightarrow x = \frac{e^{-y}}{(1+e^{-y})^2} \rightarrow 1 + e^{-y} = \frac{1}{x} \rightarrow e^{-y} = \frac{1}{x} - 1 \rightarrow e^{y} = \frac{x}{1 - x} \rightarrow y = ln(\frac{x}{1-x})$. 
+
+So the inverse function is
+$F^{-1} = ln(\frac{x}{1-x})$.
+
+Now, we use the inverse transform method to generate *500* observations from the standard logistic distribution. We store these values in an R object called *simvalues* and plot our simulated values using the *hist()* R function.
+```{r}
+set.seed(1005844909)
+
+n <- 500
+u <- runif(n, min=0, max=1)
+
+# From our calculation above, F^{-1}(u) = ln(\frac{x}{1-x})
+# So we want to process all our samples, u through this inverse function
+# Note that in R, log means ln
+simvalues <- log(u/(1-u)) #F^{-1}(u)
+
+# Modelling the density from simvalues
+hist(simvalues, prob=TRUE) #prob = True so its probability instead of frequency
+
+
+```
+
+
+Now, weCompute the theoretical value of $P\left(Y <1\right)$. \
+$\textcolor{blue}{ANSWER:}$
+
+$P(Y<1) = \frac{1}{1 + e^{-1}} = \frac{1}{1 + \frac{1}{e}} = \frac{e}{e+1} \approx 0.731$
+
+Let's now use R to estimate $P\left(Y\ <1\right)$ using the standard logistic distribution observations simulated. 
+```{r}
+
+set.seed(1005844909)
+
+n <- 500
+u <- runif(n, min=0, max=1)
+simvalues <- log(u/(1-u)) #F^{-1}(u)
+sum(simvalues<1)/500
+
+
+```
+
+Compare the theoretical value of $P\left(Y <1\right)$ in *ci* to the estimated value of $P\left(Y <1\right)$ in *cii*. If we simulated *5000* values from this distribution instead, the theoretical value from ci and the estimated value in cii are close, but not exactly the same (0.731 vs 0.756), because sample size 500 is adequately large but not infinity. The simulated outcome would increase in accuracy (i.e., approach the theoretical outcome) as the sample size approaches infinity. I expect that if I simulated 5000 values from this distribution instead, the difference between the theoretical and estimated probabilities would decrease because, as noted, increased sample size tends to increase accuracy of the simulated outcome. 
+
+
+3. 
+
+Suppose the university is looking for *30* student representatives to serve on a variety of committees across campus. They plan to randomly select current students one at a time and send them an invitation. Suppose *75%* of students will agree to serve on a committee if invited. Let $Y$ be the number of students the university will need to invite to recruit their target number of student representatives. *[Note: Since the number of students at the university is so large compared to the number of students they are looking for to serve on university committees, we may assume that sampling is done with replacement for this question.]*
+
+A negative binomial distribution is an appropriate model of Y. It involves a sequence of independent Bernoulli trials with probability of success *p*. The random variable Y is the number of these trials up to and including the trial the *rth* success occurs. In our case, our *p* (probability of success) is *0.75*, and we can assume this number stays consistent across trials as the question states that we can assuming sampling is done with replacement. Then, *r* is *30* as we need *30* student reps. 
+
+Let's find $E(Y)$, and $P(Y\le a)$ where $a=E(Y)$. 
+```{r}
+
+#(i) E(X) = r/p = 30/0.75, r is the number successes, p is the probability
+30/0.75
+
+#(ii) 
+pnbinom(avg-30, 30, 0.75)
+
+```
+
+Let's write R code to simulate $1000$ repetitions of the random experiment described in this question and obtain a histogram of our simulated values. 
+
+```{r}
+set.seed(1005844909)
+invitations <- rnbinom(1000, 30, 0.75) #set observations of 1000 trials of 
+# negative binomial in invitations
+hist(invitations, prob=TRUE) # Create  histogram
+
+```
+
+
+Next, we will estimate $E(Y)$ and $P(Y\le a)$ where $a=E(Y)$ using the generated random observations above. 
+
+```{r}
+
+mean = (sum(invitations)/length(invitations) + 30)
+# adding 30 since rnbinom generates n realizations of X-r, where X is defined 
+# as number of trials including rth success. r = 30 so addding 30. 
+mean 
+
+i <- 0
+for (num in invitations){
+  if (num < mean-30|num == mean-30){
+    i <- i + 1
+  }
+}
+p_less_than_equal_a <- i/length(invitations)
+p_less_than_equal_a
+
+# My theoretical values I determined above were 40 and 0.5839041, while the 
+# simulated outcomes are 40.09 and 0.588. As such, the values are close to each 
+#. other but not exactly the same. I think the values are close because the 
+# sample size 1000 is relatively large and because the RV Y follows the negative 
+# binomial distribution exactly. 
+```
+
+
+4. 
+
+The time until the light in Savanna's office fails is *exponentially distributed* with mean *2 hours*. Let's find the probability that Savanna's light survives more than three hours.\
+
+
+Let X be the number of hours until the light fails. Then $E(X) = \frac{1}{\lambda} = 2$. Then $\lambda = 2$. As such, $X$~$Exp(2)$. We need to find $P(X>3) = 1 - P(X\leq3) = 1 - (1 - e^{-\frac{1}{2}\times3}) = e^{-\frac{3}{2}} = 0.22313016014$
+
+Now, we will Ssimulate 2000 observations from this exponential distribution and estimate probability that was computed.
+```{r}
+
+set.seed(1005844909)
+
+sims <- rexp(2000, rate = 0.5) # 2000 simulations 
+i <- 0
+for (num in sims){
+  if (num > 3){
+    i <- i + 1
+  }
+} 
+# i contains the number of times the light bulb lasts longer than 3 hours in 
+# 2000 trials
+
+i/length(sims)
+
+# est is the estimated probability for P(X>3)
+```
+
+Now estimate the mean of this exponential distribution using simulated observations. 
+```{r}
+
+set.seed(1005844909)
+simulations <- rexp(2000, rate = 0.5) # running the experiment 2000 times 
+sum(simulations)/length(simulations) # finding the estimated mean 
+
+
+```
+
+The time until the computer crashes in Savanna's office is *exponentially distributed* with mean *3 hours*. Suppose failure of the light and crash of the computer times in Savanna's office are independent. The probability that neither the light nor the computer fails in the next 3 hours is:\
+
+Let X be the number of hours until the light fails and Y be the number of hours until the computer crashes. Then we know $X$~$Exp(\frac{1}{2})$ and $Y$~$Exp(\frac{1}{3})$. We need to find $P(X>3 \cap Y>3)$. Since we know X and Y are independent, $P(X>3 \cap Y>3) = P(X>3) \times P(Y>3) = e^{-\frac{3}{2}} \times e^{-1} = 0.08208499862$. 
+
+Estimate the probability above by randomly generating 2000 light failures and computer crashes. 
+```{r}
+set.seed(1005844909)
+
+light <- rexp(2000, rate = 1/2) # 2000 light failures
+computer <- rexp(2000, rate = 1/3) # 2000 computer crashes
+
+counter <- 0
+for(i in 1:2000) { # looping through each of 2000 observations 
+  if (light[i] > 3 & computer[i] > 3) {
+      counter <- counter + 1} 
+  # counter increments whenever neither the light nor the computer fails in the 
+  # next 3 hours
+  }
+counter/2000 # total number of successes over total observations (2000) 
+# gives estimated probability
+
+
+```
+
+5. 
+
+Consider the R data set “Nile” that contains measurements of the annual flow of the river  Nile (in $10^8$ $m^2$) at Aswan. The data set consists of $100$ measurements and the following code produces a histogram of these data. 
+```{r}
+hist(Nile)
+```
+
+We can see that one of measurements (456 $10^8$ $m^2$) is an unusual observation in the data set. We will exclude this measurement from the data set using the R code below and save the 99 measurements we will work with in this question in the vector *flow*. 
+```{r}
+flow<-Nile[Nile > 600]
+
+```
+
+Now, let's construct a histogram for the *99* annual flow measurements of the Nile and comment on the shape of the distribution of flow measurements. 
+
+```{r}
+
+flow<-Nile[Nile > 600]
+hist(flow)
+# The shape of the distribution appear to follow a normal distribution. We can 
+# see the shape of a bell curve peaking between flow of 800 - 900 10^8 m^2. 
+
+
+qqplot(x=qnorm(p=ppoints(flow), mean=mean(flow), sd=sd(flow)), 
+       y=flow,
+       xlab="Theoretical Quantiles",
+       ylab="Sample Quantiles",
+       main="Normal Q-Q Plot")
+abline(a=0, b=1, col="red")
+
+# I generated a normal q-q plot to compare the values in flow with normal 
+# distribution. The normal distribution has mean and standard deviation 
+# calculated from the flow data set. As we can see on the plot, the data appears 
+# to follow a normal distribution quite well. I believe that if we had collected 
+# even more observations (as currently n is only 99) the approximation will be 
+# even more accurate. 
+
+```
+
+Based on the shape of the histogram, as stated above, I think that a normal distribution may be appropriate to model these flow measurements. Additionally, we know that based on the central limit theorem: the average and sum of a large observations of a random ariable has approximately normal distribution. That is, normal distribution is best used to model natural phenomena, including the flow of a river. Therefore, I think if we collect more information on the annual flow of the river, as the data size grows, we will see that the normal distribution models the data better and better. 
+
+Let's create a gamma Q-Q plot using the parameters shape parameter *20* and rate parameter *1*. 
+
+```{r}
+
+qqplot(x=qgamma(p=ppoints(flow), shape=20, rate=1), 
+       y=flow,
+       xlab = "Theoretical Quantiles", 
+       ylab = "Observed Quantiles", 
+       main = "Gamma Q-Q Plot")
+abline(a=0, b=1, col="red")
+
+
+# The line for Y = X does not show on the graph due to the vast differences 
+# between the values (theoretical values hovering around 20 and observed values 
+# in the range 600-1400). Therefore we can say that the annual flow measurements 
+# do not follow the gamma distribution, or at least not with the given 
+# parameters. Looking at the graph, we can however see that there seem to be a 
+# strong correlation between the observed and theoretical quantiles. So perhaps 
+# a gamma distribution with different parameters could be a better model for the 
+# flow data. 
+```
+
